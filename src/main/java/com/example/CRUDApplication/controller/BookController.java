@@ -2,9 +2,10 @@ package com.example.CRUDApplication.controller;
 
 import com.example.CRUDApplication.model.Book;
 import com.example.CRUDApplication.repo.BookRepo;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -13,35 +14,38 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api")
+@RequiredArgsConstructor
 public class BookController {
-    @Autowired
-    private BookRepo bookRepo;
+
+    private final BookRepo bookRepo;
+
     @GetMapping("/getAllBooks")
     public ResponseEntity<List<Book>> getAllBooks() {
-        try{
-            List<Book> bookList=new ArrayList<>();
+        try {
+            List<Book> bookList = new ArrayList<>();
             bookRepo.findAll().forEach(bookList::add);
 
-            if (bookList.isEmpty()){
-                return  new ResponseEntity<>(HttpStatus.NO_CONTENT);
-                }
-            return new ResponseEntity<>(bookList,HttpStatus.OK);
-        }catch(Exception ex){
+            if (bookList.isEmpty()) {
+                return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+            }
+            return new ResponseEntity<>(bookList, HttpStatus.OK);
+        } catch (Exception ex) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
     }
+
     @GetMapping("/getBooksById/{id}")
     public ResponseEntity<Book> getBookById(@PathVariable Long id) {
-       Optional<Book> bookObj =bookRepo.findById(id);
+        Optional<Book> bookObj = bookRepo.findById(id);
 
-       if(bookObj.isPresent()){
-           return new ResponseEntity<>(bookObj.get(),HttpStatus.OK);
-       }
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        if (bookObj.isPresent()) {
+            return new ResponseEntity<>(bookObj.get(), HttpStatus.OK);
+        }
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
+
     @PostMapping("/addBook")
-    public ResponseEntity<Book> addBook(@RequestBody Book book){
+    public ResponseEntity<Book> addBook(@RequestBody Book book) {
         try {
             Book bookObj = bookRepo.save(book);
             return new ResponseEntity<>(bookObj, HttpStatus.CREATED);
@@ -49,8 +53,9 @@ public class BookController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     @PostMapping("/updateBookById/{id}")
-    public ResponseEntity<Book> updateBookById(@PathVariable Long id, @RequestBody Book book){
+    public ResponseEntity<Book> updateBookById(@PathVariable Long id, @RequestBody Book book) {
         try {
             Optional<Book> bookData = bookRepo.findById(id);
             if (bookData.isPresent()) {
@@ -61,12 +66,12 @@ public class BookController {
                 Book bookObj = bookRepo.save(updatedBookData);
                 return new ResponseEntity<>(bookObj, HttpStatus.CREATED);
             }
-
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     @DeleteMapping("/deleteBookById/{id}")
     public ResponseEntity<HttpStatus> deleteBook(@PathVariable Long id) {
         try {
@@ -76,6 +81,7 @@ public class BookController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
     @DeleteMapping("/deleteAllBooks")
     public ResponseEntity<HttpStatus> deleteAllBooks() {
         try {
@@ -85,4 +91,10 @@ public class BookController {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    @ExceptionHandler(BookNotFoundException.class)
+    public ResponseEntity<String> handleBookNotFoundException(BookNotFoundException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
 }
